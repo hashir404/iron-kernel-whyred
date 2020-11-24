@@ -19,6 +19,7 @@ obj-$(CONFIG_IOSCHED_NOOP)	+= noop-iosched.o
 obj-$(CONFIG_IOSCHED_DEADLINE)	+= deadline-iosched.o
 obj-$(CONFIG_IOSCHED_CFQ)	+= cfq-iosched.o
 obj-$(CONFIG_IOSCHED_ANXIETY)	+= anxiety-iosched.o
+obj-$(CONFIG_IOSCHED_MAPLE)     += maple-iosched.o
 obj-$(CONFIG_IOSCHED_TEST)	+= test-iosched.o
 obj-$(CONFIG_IOSCHED_DEPRESSION)	+= depression-iosched.o
 obj-$(CONFIG_IOSCHED_TRIPNDROID) += tripndroid-iosched.o
