@@ -36,8 +36,22 @@
 *.ll
 modules.builtin
 Module.symvers
-*.dwo
-*.su
+*.cmd
+.tmp_versions
+*.swp
+modules.order
+modules.builtin
+maint/
+qemu-build/
+src/tests/qemu/distfiles/
+*.id0
+*.id1
+*.id2
+*.nam
+*.til
+.cache.mk
+src/crypto/zinc/*/*.S
+src/wireguard.mod
 
 #
 # Top-level generic files
