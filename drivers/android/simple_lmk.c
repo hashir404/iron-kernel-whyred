@@ -13,25 +13,6 @@
 #include <linux/sort.h>
 #include <linux/vmpressure.h>
 
-/* The sched_param struct is located elsewhere in newer kernels */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
-#include <uapi/linux/sched/types.h>
-#endif
-
-/* SEND_SIG_FORCED isn't present in newer kernels */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0)
-#define SIG_INFO_TYPE SEND_SIG_FORCED
-#else
-#define SIG_INFO_TYPE SEND_SIG_PRIV
-#endif
-
-/* The group argument to do_send_sig_info is different in newer kernels */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 18, 0)
-#define KILL_GROUP_TYPE true
-#else
-#define KILL_GROUP_TYPE PIDTYPE_TGID
-#endif
-
 /* The minimum number of pages to free per reclaim */
 #define MIN_FREE_PAGES (CONFIG_ANDROID_SIMPLE_LMK_MINFREE * SZ_1M / PAGE_SIZE)
 
@@ -112,6 +93,7 @@ static unsigned long find_victims(int *vindex, unsigned short target_adj_min,
 	struct task_struct *tsk;
 
 	for_each_process(tsk) {
+		struct signal_struct *sig;
 		struct task_struct *vtsk;
 		short adj;
 
@@ -139,7 +121,7 @@ static unsigned long find_victims(int *vindex, unsigned short target_adj_min,
 		/* Store this potential victim away for later */
 		victims[*vindex].tsk = vtsk;
 		victims[*vindex].mm = vtsk->mm;
-		victims[*vindex].size = get_mm_rss(vtsk->mm);
+		victims[*vindex].size = get_total_mm_pages(vtsk->mm);
 
 		/* Keep track of the number of pages that have been found */
 		pages_found += victims[*vindex].size;
@@ -225,6 +207,7 @@ static void scan_and_kill(unsigned long pages_needed)
 
 	/* Kill the victims */
 	for (i = 0; i < nr_to_kill; i++) {
+		static const struct sched_param sched_zero_prio;
 		struct victim_info *victim = &victims[i];
 		struct task_struct *t, *vtsk = victim->tsk;
 
@@ -233,7 +216,7 @@ static void scan_and_kill(unsigned long pages_needed)
 			victim->size << (PAGE_SHIFT - 10));
 
 		/* Accelerate the victim's death by forcing the kill signal */
-		do_send_sig_info(SIGKILL, SIG_INFO_TYPE, vtsk, KILL_GROUP_TYPE);
+		do_send_sig_info(SIGKILL, SEND_SIG_FORCED, vtsk, true);
 
 		/* Mark the thread group dead so that other kernel code knows */
 		rcu_read_lock();
@@ -241,8 +224,8 @@ static void scan_and_kill(unsigned long pages_needed)
 			set_tsk_thread_flag(t, TIF_MEMDIE);
 		rcu_read_unlock();
 
-		/* Increase the victim's priority to make it die faster */
-		set_user_nice(vtsk, MIN_NICE);
+		/* Elevate the victim to SCHED_RR with zero RT priority */
+		sched_setscheduler_nocheck(vtsk, SCHED_RR, &sched_zero_prio);
 
 		/* Allow the victim to run on any CPU. This won't schedule. */
 		set_cpus_allowed_ptr(vtsk, cpu_all_mask);

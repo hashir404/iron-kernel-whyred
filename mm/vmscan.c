@@ -2549,18 +2549,6 @@ static bool shrink_zone(struct zone *zone, struct scan_control *sc,
 				    sc->nr_scanned - nr_scanned,
 				    zone_lru_pages);
 
-		/*
-		 * Record the subtree's reclaim efficiency. The reclaimed
-		 * pages from slab is excluded here because the corresponding
-		 * scanned pages is not accounted. Moreover, freeing a page
-		 * by slab shrinking depends on each slab's object population,
-		 * making the cost model (i.e. scan:free) different from that
-		 * of LRU.
-		 */
-		vmpressure(sc->gfp_mask, sc->target_mem_cgroup,
-			   sc->nr_scanned - nr_scanned,
-			   sc->nr_reclaimed - nr_reclaimed);
-
 		if (reclaim_state) {
 			sc->nr_reclaimed += reclaim_state->reclaimed_slab;
 			reclaim_state->reclaimed_slab = 0;
@@ -3423,7 +3411,6 @@ static void kswapd_try_to_sleep(pg_data_t *pgdat, int order,
 
 	/* Try to sleep for a short interval */
 	if (prepare_kswapd_sleep(pgdat, order, remaining, classzone_idx)) {
-		simple_lmk_stop_reclaim();
 		remaining = schedule_timeout(HZ/10);
 		finish_wait(&pgdat->kswapd_wait, &wait);
 		prepare_to_wait(&pgdat->kswapd_wait, &wait, TASK_INTERRUPTIBLE);
@@ -3434,7 +3421,6 @@ static void kswapd_try_to_sleep(pg_data_t *pgdat, int order,
 	 * go fully to sleep until explicitly woken up.
 	 */
 	if (prepare_kswapd_sleep(pgdat, order, remaining, classzone_idx)) {
-		simple_lmk_stop_reclaim();
 		trace_mm_vmscan_kswapd_sleep(pgdat->node_id);
 
 		/*
