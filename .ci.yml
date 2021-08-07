@@ -1,0 +1,14 @@
+kind: pipeline
+name : iron FE
+steps:
+ - name: MSM660
+   image: xyzuan/xdocker:latest
+   environment:
+     token:
+       from_secret: token
+     chat_id:
+       from_secret: chat_id
+   commands:
+     - git clone --depth=1 https://github.com/hashir404/iron-kernel-whyred.git whyred 
+     - cd whyred 
+     - bash build.sh
