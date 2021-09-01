@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 echo "Cloning dependencies"
 git clone --depth=1 https://github.com/kdrag0n/proton-clang clang
-git clone --depth=1 --single-branch -b whyred https://github.com/akira-vishal/AnyKernel3.git AnyKerne
+git clone --depth=1 --single-branch -b whyred https://github.com/akira-vishal/AnyKernel3.git AnyKernel
 echo "Done"
 DEVICE=whyred
 DEFCONFIG=whyred-newcam_defconfig
